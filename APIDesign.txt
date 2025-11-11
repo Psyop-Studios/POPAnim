@@ -1,0 +1,164 @@
+
+
+
+POPAnim exampleAnim[10];
+ 
+
+1. array
+2. position
+3. speed
+4. boomerang
+
+
+POPAnim("array", exampleAnim, "position", (100,100), "speed", 6.0f, "boomerang", true);
+
+if you wanted to use an anim, you would need to hold data for it, right?
+
+like which frame it is currently in, and if it's supposed to be playing or not, stuff like that
+
+we could have a single draw function that draws all anims without needing to pass them params
+
+like I do with the UI lib, they just get automatically added to the draw queue
+
+okay so you already learned how to use GblArrayList right?
+
+so my thought process for this is:
+
+1 - We hold a draw queue (a GblArrayList) that we can sort by Z-Index (just like my draw queue on the ui lib)
+2 - When we create POPAnims, they automatically get added to it
+3 - POPAnims hold their own data (current frame, should draw, etc.)
+4 - Draw function goes through the draw queue and handles it all automatically
+
+makes sense?
+
+so we just need to create the POPAnim type, which honestly doesn't reeaaaally need to be a libGimbal class unless
+we really want function overloading / default args for this
+
+so that's up to you
+
+yeah then let's do that
+
+do both of you understand the difference between class / object ?
+
+nupi do you?
+exactly
+
+so you do too cypress
+it's just an instance of a class
+
+okay, so we need to make our class which inherits from GblObject, the most primitive type of objects there is on libGimbal
+(technically not true, there are more primitives, but it is the one you'll use the most)
+
+do you both understand how inheritance works?
+
+imagine for a moment that classes are just structs
+
+imagine it looks like this:
+
+Struct a {
+	int x;
+	int y;
+}
+
+
+and you want Struct b to inherit from struct a
+
+Struct b {
+	struct a parent;
+	int z;
+}
+
+this is literally all inheritance is. lol.
+
+except, it has some other cool features
+
+this can hold function pointers, and overload/extend their functionality
+
+well I guess you should know this first:
+
+
+(you can follow/unfollow me in the liveshare tab, just click my name)
+
+if we treated Struct b as an instance of Struct a : this WILL work
+^ this works because the memory layout is THE SAME.
+
+imagine memory address 0x00000 is the start of an instance of struct a, let's call that address `begin`
+
+so begin + sizeof(int) will be where int x is, right?
+this is also true for Struct b
+
+so if you wanted to use Struct b as Struct a, and your functions just looked for memory offsets, they would behave the SAME
+
+does that make sense?
+
+yeah, that's exactly it
+
+this would be the "data" part of inheritance
+inheritance also means, in libGimbal, that functions will work the same way too
+
+as in, remember how we inherit from GblObject?
+
+it has function pointers you can call when creating / deleting objects, and if you define what those point to in the parent class,
+they automatically work on the child too
+
+for example:
+
+Struct parent_class {
+	void *pFnUpdate(void);
+}
+
+Struct child_class {
+	struct parent_class parent;
+}
+
+so if we called pFnUpdate on child_class, it will work and update itself as the parent tells it to
+
+this is what I do for pFnDraw on my widgets, since all widgets draw basically in the same way
+
+those that need extra functionality just "extend" the draw function, like so:
+
+void extended_update(void) {
+	(parent_class)self->pFnUpdate(); <-
+	... more stuff here ...
+}
+
+this is more or less how it works. not exactly, but it's pseudo code
+
+does this make sense? I also need cypress to confirm when he comes back lol
+
+anyways, now we need to create our own POPAnim class extending GblObject
+we need to decide if we want/need more though 
+are there any "special" cases we would want to handle separately and not as a flag? like a bool that you pass or smt like that
+I would think not, but idk
+
+by flag I just mean a bool that you pass as a property to the create function, like this one:
+
+yeah, the boomerang
+
+
+but I think the anims should be simple enough that we can just pass flags to the same class
+so we will never need polymorphism
+
+polymorphism in OOP means that you can treat class B as class A 
+just like we did above
+
+I need lots of it on the UI lib bc I treat everything as a widget, unless I need something specific to that element
+but in the anim lib, I'm not sure you need polymorphism at all honestly
+but I guess this is even better for learning libGimbal at first though, the code should be simple enough
+and if we ever want to extend it, it'll be far easier than if we just hard-coded it
+
+anyways we can start when cypress is ready, I'd appreciate if you can explain this to him when he's back
+like how classes work and stuff
+oh
+lol
+hi
+
+
+lol
+
+is there anything you'd like to ask before we begin?
+or are you confident in your OOP skeeeelzzz
+
+alright, let's go ahead then
+
+okay, so we want to name our anim class just POPAnim ? kk, follow me

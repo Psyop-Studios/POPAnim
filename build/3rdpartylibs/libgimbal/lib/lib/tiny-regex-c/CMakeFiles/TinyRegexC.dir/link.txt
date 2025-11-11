@@ -1,0 +1,2 @@
+/usr/bin/ar qc libTinyRegexC.a CMakeFiles/TinyRegexC.dir/re.c.o
+/usr/bin/ranlib libTinyRegexC.a

@@ -1,0 +1,12 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/cyp/Documents/POPAnim/build/cmake_install.cmake",
+		"/home/cyp/Documents/POPAnim/build/3rdpartylibs/libgimbal/cmake_install.cmake",
+		"/home/cyp/Documents/POPAnim/build/3rdpartylibs/libgimbal/lib/cmake_install.cmake",
+		"/home/cyp/Documents/POPAnim/build/3rdpartylibs/libgimbal/lib/lib/tinycthread/cmake_install.cmake",
+		"/home/cyp/Documents/POPAnim/build/3rdpartylibs/libgimbal/lib/lib/tiny-regex-c/cmake_install.cmake",
+		"/home/cyp/Documents/POPAnim/build/3rdpartylibs/libgimbal/lib/lib/lz4/build/cmake/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

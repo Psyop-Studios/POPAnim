@@ -1,0 +1,1 @@
+/usr/bin/cc -Wl,--dependency-file=CMakeFiles/POPAnim.dir/link.d CMakeFiles/POPAnim.dir/main.c.o CMakeFiles/POPAnim.dir/src/POPAnim.c.o -o POPAnim  -lraylib 3rdpartylibs/libgimbal/lib/liblibGimbal.a 3rdpartylibs/libgimbal/lib/lib/tinycthread/libtinycthread.a 3rdpartylibs/libgimbal/lib/lib/tiny-regex-c/libTinyRegexC.a 3rdpartylibs/libgimbal/lib/lib/lz4/build/cmake/liblz4.a -lm
