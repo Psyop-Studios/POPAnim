@@ -4,10 +4,6 @@
 static GBL_RESULT POP_Anim_init_(GblInstance *pInstance) {
 	POP_Anim *pSelf = POP_ANIM(pInstance);
 
-	// here we can initialize variables to whatever we want the default values to be
-	// notice how I cast GblInstance *pInstance to *pSelf (POP_Anim)
-	// that way, we have access to this stuff:
-
 	pSelf->Boomerang = false;
     pSelf->Active = true;
     pSelf->Position = (Vector2){0, 0}; // that's fine!
@@ -15,27 +11,15 @@ static GBL_RESULT POP_Anim_init_(GblInstance *pInstance) {
     pSelf->Rotation = 0;
     pSelf->Scale = 1;
     pSelf->RealTimer = 1 / 10;
-    pSelf->Color = RAYWHITE;
-
+    pSelf->Color = WHITE;
+	//pSelf->textures = TODO[]
+	pSelf->frames = 0;
+	pSelf->currentFrame = 0;
 	return GBL_RESULT_SUCCESS;
 }
 
-// cool, so we now need to handle props
-// there are two separate property functions: set and read
-
-// set
 static GBL_RESULT POP_Anim_setProperty_(GblObject *pObject, const GblProperty *pProp, GblVariant *pValue) {
 	POP_Anim *pSelf = POP_ANIM(pObject);
-
-	// GBL_PROPERTIES(POP_Anim,
-// 		(boomerang, GBL_GENERIC, (READ, WRITE), GBL_BOOL_TYPE),
-//     (active, GBL_GENERIC, (READ, WRITE), GBL_BOOL_TYPE),
-//     (speed, GBL_GENERIC, (READ, WRITE), GBL_FLOAT_TYPE),
-// 		(scale, GBL_GENERIC, (READ, WRITE), GBL_FLOAT_TYPE),
-//     (rotation, GBL_GENERIC, (READ, WRITE), GBL_FLOAT_TYPE),
-//     (x, GBL_GENERIC, (READ, WRITE), GBL_FLOAT_TYPE),
-// 		(y, GBL_GENERIC, (READ, WRITE), GBL_FLOAT_TYPE)  
-// )
 
 	switch(pProp->id) {
 		case POP_Anim_Property_Id_boomerang:
@@ -58,34 +42,43 @@ static GBL_RESULT POP_Anim_setProperty_(GblObject *pObject, const GblProperty *p
 			break;
         case POP_Anim_Property_Id_rotation:
 			GblVariant_valueCopy(pValue, &pSelf->Rotation);
-			// this is wrong!
-			break;
+			break; // we don't have a texture prop yet, because you'd need to register the Texture type into libGimbal's type system, we can do that in a sec
+		case POP_Anim_Property_Id_frames:
+			GblVariant_valueCopy(pValue, &pSelf->frames);
+			break; 
+		case POP_Anim_Property_Id_textures:
+			GblVariant_valueCopy(pValue, &pSelf->textures); // wherever we allocate our memory for our anims will need to be in the heap, yes.
+			// not necessarilly, there are a lot of ways of doing
+			// right, I was gonna say, libGimbal has a lot of custom allocators we can use
+			// much, MUCH faster than malloc()
+			// yes, we will be ref counting our anims
+			// do you know what that is?
+
+			// yup. basically, we have a counter of how many instances of this particular anim are "alive", or being used.
+			// everytime someone over at the game's code (outside this lib) creates or loads an anim, we increase that ref counter by 1
+			// when it brings 0, we know we can free it
+			// we are responsible for it, but libGimbal facilitates it
+			// yeah, pretty much
+			// in fact, follow me for a sec
+
+			break; // :D
 		default:
 			printf("you're stupid and tried to set a property that doesn't exist! :cuck: \n"); // nice touch
 			return GBL_RESULT_ERROR_INVALID_PROPERTY;
 	}
 
-	// we done?
-	// kk, we need to handle setting them now
-	// oh, you can handle position as a whole, but it's a bit more complex. you need to register Vector2 as a libGimbal type
-	// we can do that later
-	// yup, a bit more complex but nothing too crazy
-	// let's finish this first though
-
 	return GBL_RESULT_SUCCESS;
 }
 
-// read
+// sorry I got distracted, what are you guys talking about?
+// something about loading textures
+
+// not necessarily! it'll work with texture2ds just fine
+// yeah, it's just a void*
+// that's why I said props don't need to map to real data! exactly!
+
 static GBL_RESULT POP_Anim_property_(const GblObject *pObject, const GblProperty *pProp, GblVariant *pValue) {
-	POP_Anim *pSelf = POP_ANIM(pObject);
-
-	// we need to handle reading*
-
-	// this is the same thing, but the other way around: the passed pValue gets written to, reading from the passed pProp
-	// not exactly : valueCopy doesn't work here. you need to use GblVariant_setXXXXX
-	// yeah
-	// setFloat, setUint8, setintxx etc.
-	
+	POP_Anim *pSelf = POP_ANIM(pObject); // p stands for pointer, it's a naming convention
 
 	switch (pProp->id) {
 		case POP_Anim_Property_Id_boomerang:
@@ -109,28 +102,71 @@ static GBL_RESULT POP_Anim_property_(const GblObject *pObject, const GblProperty
         case POP_Anim_Property_Id_y:
 			GblVariant_setFloat(pValue, pSelf->Position.y);
 			break;
+		case POP_Anim_Property_Id_frames:
+			GblVariant_setUint8(pValue, pSelf->frames); // this is fine
+			break;
+		case POP_Anim_Property_Id_textures:
+			GblVariant_setPointer(pValue, POP_TEXTURE_TYPE, pSelf->textures);
+			break;
 		default: 
 			printf("you're stupid and tried to read a property that doesn't exist! :cuck: \n"); // nice touch
-			break;
-
+			return GBL_RESULT_ERROR_INVALID_PROPERTY; 
 	}
 
 	return GBL_RESULT_SUCCESS;
 }
 
-GBL_RESULT POP_Anim_activate_(POP_Anim *pSelf) {
-	return GBL_RESULT_SUCCESS;
-}
-
-GBL_RESULT POP_Anim_deactivate_(POP_Anim *pSelf) {
-	return GBL_RESULT_SUCCESS;
-}
-
 GBL_RESULT POP_Anim_update_(POP_Anim *pSelf) {
+	if(pSelf->Active){
+		
+		if(pSelf->Boomerang){
+			// LMFAO
+			// pro tip: do this:
+			
+			// REMEMBER CURRENT FRAME IS U8, 0 - 1 = 255
+
+			// @Cypress dunno if you remember, but we dealt with this EXACT SAME problem in
+			// BeachBox VMU animations lol
+			// ding!
+
+			if(pSelf->currentFrame + (pSelf->Forward ? 1 : -1) >= pSelf->frames) pSelf->Forward = !pSelf->Forward;
+			pSelf->currentFrame += pSelf->Forward ? 1 : -1;
+			
+			
+		} else {
+			pSelf->currentFrame = (pSelf->currentFrame + 1) % pSelf->frames;
+		}
+
+
+	}
+
+	// here's another looping example that avoids branching
+	// I mean, making a new variable would mean you're using more RAM, per animation
+	// if the solution isn't *too* complex, I'd say not having to make a new variable is good
+	// specially since this is a lib we'll be using for our games
+	// not at all! I was surprised on how little work it is to implement different backends.
+	// you just need to do some work at first to make it all abstract, then it's smooth sailing
+	// with a project as small as this one, it'll be easy
+	// yeah go ahead
+
+	// int max = pSelf->frames;  // Upper bound (oscillate between 0 and max)
+    // int period = 2 * max;  // Full cycle length: 6
+    // int i = max;  // Start at max to begin sequence at 0 going upward
+    
+    // for (int count = 0; count < 20; count++) {
+    //     int value = abs(i - max);  // Compute oscillating value
+    //     printf("%d\n", value);
+        
+    //     i = (i + 1) % period;  // Increment and wrap with modulo
+    // }
+	
 	return GBL_RESULT_SUCCESS;
 }
 
 GBL_RESULT POP_Anim_draw_(POP_Anim *pSelf) {
+	if(pSelf->Active) {
+		DrawTextureEx(pSelf->textures[pSelf->currentFrame], pSelf->Position, pSelf->Rotation, pSelf->Scale, pSelf->Color);
+	}
 	return GBL_RESULT_SUCCESS;
 }
 
@@ -142,8 +178,7 @@ static GBL_RESULT POP_AnimClass_init_(GblClass *pClass, const void *pData) {
 	GBL_OBJECT_CLASS(pClass)->pFnSetProperty = POP_Anim_setProperty_;
 	GBL_OBJECT_CLASS(pClass)->pFnProperty 	 = POP_Anim_property_;
 
-	POP_ANIM_CLASS(pClass)->pFnActivate 	= POP_Anim_activate_;
-	POP_ANIM_CLASS(pClass)->pFnDeactivate 	= POP_Anim_deactivate_;
+
 	POP_ANIM_CLASS(pClass)->pFnUpdate 		= POP_Anim_update_;
 	POP_ANIM_CLASS(pClass)->pFnDraw 		= POP_Anim_draw_;
 
@@ -153,13 +188,6 @@ static GBL_RESULT POP_AnimClass_init_(GblClass *pClass, const void *pData) {
 
 GblType POP_Anim_type(void) {
 	static GblType type = GBL_INVALID_TYPE;
-
-	// will explain in a sec
-
-
-	// okay so.
-	// the internal libGimbal fuckery magic needs to know these things about our new type, so it knows how to handle it
-
 
 	if (type == GBL_INVALID_TYPE) {
 		type = GblType_register(GblQuark_internStatic("POP_Anim"), // name of the type
